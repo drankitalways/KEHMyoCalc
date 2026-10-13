@@ -7,89 +7,136 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    body {
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .custom-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .custom-input:focus {
+      border-color: #059669;
+      box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+    }
     @media print {
-      body { background: white !important; font-size: 10.5pt; color: #0f172a !important; }
+      body { background: white !important; font-size: 11pt; }
       .no-print { display: none !important; }
-      .card-box { border: 1px solid #cbd5e1 !important; box-shadow: none !important; margin-bottom: 12px !important; }
-      .chart-container { height: 210px !important; }
-      @page { margin: 12mm; size: A4 portrait; }
+      .card-box { border: 1px solid #94a3b8 !important; box-shadow: none !important; }
+      @page { margin: 10mm; size: A4 portrait; }
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen font-sans antialiased">
+<body>
 
-  <!-- CLINICIAN AUTHENTICATION GATE -->
-  <div id="authScreen" class="fixed inset-0 z-50 bg-slate-900/95 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full border border-slate-100">
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-black text-slate-800 tracking-tight">Kota Eye Hospital</h2>
-        <p class="text-sm font-semibold text-emerald-600 mt-1">Myopia Care & Research Foundation</p>
-        <p class="text-xs text-slate-400 mt-2 font-medium">MPRAS Clinical Risk Calculator Login</p>
+  <!-- LOGIN OVERLAY -->
+  <div id="authScreen" class="auth-overlay">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Kota Eye Hospital</h2>
+        <p style="font-size: 13px; font-weight: 600; color: #059669; margin: 0 0 8px 0;">Myopia Care & Research Foundation</p>
+        <p style="font-size: 11px; color: #64748b; margin: 0;">MPRAS Clinical Risk Calculator Login</p>
       </div>
-      <form id="loginForm" class="space-y-4">
+
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" style="display: flex; flex-direction: column; gap: 16px;">
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Username</label>
-          <input type="text" id="username" required autocomplete="username" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm text-slate-800" placeholder="KEHMyo">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">Username</label>
+          <input type="text" id="username" class="custom-input" placeholder="KEHMyo" value="KEHMyo" required>
         </div>
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Password</label>
-          <input type="password" id="password" required autocomplete="current-password" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm text-slate-800" placeholder="••••••••">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">Password</label>
+          <input type="password" id="password" class="custom-input" placeholder="KEHMyoCare" value="KEHMyoCare" required>
         </div>
-        <p id="authError" class="text-xs text-rose-600 hidden font-semibold">Invalid clinician credentials.</p>
-        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow transition">Login to OPD Portal</button>
+        <p id="authError" style="color: #e11d48; font-size: 12px; font-weight: 600; display: none; margin: 0;">Incorrect username or password.</p>
+        <button type="submit" style="width: 100%; padding: 12px; background: #059669; color: #ffffff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;">
+          Login to OPD Portal
+        </button>
       </form>
+
+      <div style="margin-top: 18px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+        <button onclick="bypassLogin()" style="background: none; border: none; color: #0284c7; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline;">
+          Direct OPD Bypass (Skip Login)
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- MAIN OPD WORKSPACE -->
-  <div id="mainWorkspace" class="hidden max-w-7xl mx-auto px-4 py-6">
-    
-    <!-- Top Action Bar -->
+  <!-- CLINICAL WORKSPACE -->
+  <div id="mainWorkspace" style="display: none;" class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- Header bar -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 mb-6 gap-4">
       <div>
-        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Kota Eye Hospital Myopia Risk Evaluator</h1>
-        <p class="text-xs text-slate-500 font-medium">Validated MPRAS Decision Protocol</p>
+        <h1 class="text-2xl font-black text-slate-800 tracking-tight">Kota Eye Hospital Myopia Risk Evaluator</h1>
+        <p class="text-xs text-slate-500 font-medium">Validated LVPEI MPRAS Clinical Protocol</p>
       </div>
       <div class="flex items-center space-x-3 no-print">
-        <button onclick="calculateAll()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow transition">Calculate Scores</button>
-        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow transition">Print / Save PDF</button>
+        <button onclick="calculateAll()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow transition">Calculate Scores</button>
+        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg shadow transition">Print / Save PDF</button>
         <button onclick="logoutClinician()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 text-xs font-bold rounded-lg border border-rose-200">Logout</button>
       </div>
     </header>
 
-    <!-- Patient Header Card -->
+    <!-- Patient Details -->
     <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">
         <div>
           <label class="block text-slate-500 mb-1">Patient Name</label>
-          <input type="text" id="ptName" placeholder="Child Name" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 text-slate-800 font-semibold">
+          <input type="text" id="ptName" placeholder="Child Name" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 font-semibold text-slate-800">
         </div>
         <div>
           <label class="block text-slate-500 mb-1">OPD / MR Number</label>
-          <input type="text" id="ptId" placeholder="KEH-2026-XXXX" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 text-slate-800 font-semibold">
+          <input type="text" id="ptId" placeholder="KEH-2026-XXXX" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 font-semibold text-slate-800">
         </div>
         <div>
           <label class="block text-slate-500 mb-1">Current Age (Years)</label>
-          <input type="number" id="ptAge" value="9" min="3" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 text-slate-800 font-semibold" onchange="calculateAll()">
+          <input type="number" id="ptAge" value="9" min="3" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 font-semibold text-slate-800" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-slate-500 mb-1">Age of Onset (Years)</label>
-          <input type="number" id="ptOnset" value="7" min="1" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 text-slate-800 font-semibold" onchange="calculateAll()">
+          <input type="number" id="ptOnset" value="7" min="1" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300 font-semibold text-slate-800" onchange="calculateAll()">
         </div>
       </div>
     </section>
 
     <!-- Bilateral Entry Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-      
-      <!-- Shared Lifestyle & Genetics (4 Columns) -->
+
+      <!-- Lifestyle & Genetics (4 Cols) -->
       <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 card-box">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Lifestyle & Genetics</h3>
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide border-b pb-2">Lifestyle & Genetics</h3>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Myopic Parents</label>
           <select id="ptParents" class="w-full p-2 border rounded border-slate-300 bg-slate-50 text-xs" onchange="calculateAll()">
             <option value="none">Not Recorded (Downgrade Model)</option>
-            <option value="0">0 (Both Non-Myopic)</option>
+            <option value="0">0 (Neither Parent Myopic)</option>
             <option value="1">1 Parent Myopic</option>
             <option value="2" selected>2 Parents Myopic</option>
           </select>
@@ -113,7 +160,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Calculation Algorithm</label>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Scoring Model Mode</label>
           <select id="modelMode" class="w-full p-2 border rounded border-slate-300 bg-slate-50 text-xs" onchange="calculateAll()">
             <option value="auto">Adaptive Auto-Model (1a to 1g)</option>
             <option value="model1">Model 1 (Standard Unweighted)</option>
@@ -122,23 +169,23 @@
         </div>
       </div>
 
-      <!-- Right Eye (OD) Entry (4 Columns) -->
+      <!-- Right Eye (OD) Entry (4 Cols) -->
       <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-blue-200 shadow-sm space-y-3 card-box">
         <div class="flex items-center justify-between border-b pb-2">
-          <h3 class="text-xs font-bold text-blue-700 uppercase tracking-wider">Right Eye (OD)</h3>
+          <h3 class="text-xs font-bold text-blue-700 uppercase tracking-wide">Right Eye (OD)</h3>
           <span id="odBadge" class="text-xs px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800">Calculating</span>
         </div>
         <div>
-          <label class="block text-xs text-slate-600 mb-1">Cycloplegic SER (Diopters)</label>
-          <input type="number" step="0.25" id="odSER" value="-3.50" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <label class="block text-xs text-slate-600 mb-1">Current Cycloplegic SER (D)</label>
+          <input type="number" step="0.25" id="odSER" value="-3.50" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Progression in Past Year (D/year)</label>
-          <input type="number" step="0.25" id="odProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <input type="number" step="0.25" id="odProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Axial Length (mm)</label>
-          <input type="number" step="0.01" id="odAL" value="24.80" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <input type="number" step="0.01" id="odAL" value="24.80" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Relative Peripheral Defocus (RPR)</label>
@@ -169,23 +216,23 @@
         </div>
       </div>
 
-      <!-- Left Eye (OS) Entry (4 Columns) -->
+      <!-- Left Eye (OS) Entry (4 Cols) -->
       <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-teal-200 shadow-sm space-y-3 card-box">
         <div class="flex items-center justify-between border-b pb-2">
-          <h3 class="text-xs font-bold text-teal-700 uppercase tracking-wider">Left Eye (OS)</h3>
+          <h3 class="text-xs font-bold text-teal-700 uppercase tracking-wide">Left Eye (OS)</h3>
           <span id="osBadge" class="text-xs px-2 py-0.5 rounded font-bold bg-teal-100 text-teal-800">Calculating</span>
         </div>
         <div>
-          <label class="block text-xs text-slate-600 mb-1">Cycloplegic SER (Diopters)</label>
-          <input type="number" step="0.25" id="osSER" value="-3.25" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <label class="block text-xs text-slate-600 mb-1">Current Cycloplegic SER (D)</label>
+          <input type="number" step="0.25" id="osSER" value="-3.25" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Progression in Past Year (D/year)</label>
-          <input type="number" step="0.25" id="osProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <input type="number" step="0.25" id="osProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Axial Length (mm)</label>
-          <input type="number" step="0.01" id="osAL" value="24.70" class="w-full p-2 border rounded border-slate-300 text-xs font-medium" onchange="calculateAll()">
+          <input type="number" step="0.01" id="osAL" value="24.70" class="w-full p-2 border rounded border-slate-300 text-xs font-semibold" onchange="calculateAll()">
         </div>
         <div>
           <label class="block text-xs text-slate-600 mb-1">Relative Peripheral Defocus (RPR)</label>
@@ -218,23 +265,23 @@
 
     </div>
 
-    <!-- Diagnostic Score Cards -->
+    <!-- Results Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-      <div id="odCard" class="p-5 rounded-xl border bg-white shadow-sm card-box">
+      <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-sm card-box">
         <h4 class="font-bold text-slate-800 text-sm mb-1">Right Eye (OD) Progression Assessment</h4>
         <div class="flex items-baseline space-x-3 my-2">
           <span id="odScoreVal" class="text-3xl font-black text-blue-600">0</span>
-          <span id="odCutoffVal" class="text-xs text-slate-500 font-medium">Cut-off: 41.50</span>
+          <span id="odCutoffVal" class="text-xs text-slate-500 font-semibold">Cut-off: 41.50</span>
         </div>
         <p id="odVerdict" class="text-sm font-bold text-rose-600">At-Risk for High Progression</p>
         <p id="odDetail" class="text-xs text-slate-500 mt-1">Evaluated on Model 1a</p>
       </div>
 
-      <div id="osCard" class="p-5 rounded-xl border bg-white shadow-sm card-box">
+      <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-sm card-box">
         <h4 class="font-bold text-slate-800 text-sm mb-1">Left Eye (OS) Progression Assessment</h4>
         <div class="flex items-baseline space-x-3 my-2">
           <span id="osScoreVal" class="text-3xl font-black text-teal-600">0</span>
-          <span id="osCutoffVal" class="text-xs text-slate-500 font-medium">Cut-off: 41.50</span>
+          <span id="osCutoffVal" class="text-xs text-slate-500 font-semibold">Cut-off: 41.50</span>
         </div>
         <p id="osVerdict" class="text-sm font-bold text-rose-600">At-Risk for High Progression</p>
         <p id="osDetail" class="text-xs text-slate-500 mt-1">Evaluated on Model 1a</p>
@@ -245,35 +292,33 @@
     <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">
       <div class="flex items-center justify-between pb-3 border-b mb-4">
         <div>
-          <h3 class="text-base font-bold text-slate-800">5-Year Progression Projections</h3>
-          <p class="text-xs text-slate-500">Natural Elongation vs Optical & Pharmacological Therapy</p>
+          <h3 class="text-base font-bold text-slate-800">5-Year Progression Trajectory Curves</h3>
+          <p class="text-xs text-slate-500">Natural Elongation vs Defocus/Pharmacotherapy Protocol</p>
         </div>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <h4 class="text-xs font-bold text-center text-slate-600 uppercase mb-2">Refraction Trajectory (OD SER in Diopters)</h4>
-          <div class="h-60 chart-container">
+          <div style="height: 240px; position: relative;">
             <canvas id="serChart"></canvas>
           </div>
         </div>
         <div>
           <h4 class="text-xs font-bold text-center text-slate-600 uppercase mb-2">Axial Length Growth (OD AL in mm)</h4>
-          <div class="h-60 chart-container">
+          <div style="height: 240px; position: relative;">
             <canvas id="alChart"></canvas>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Clinical Decision Roadmap -->
+    <!-- Clinical Protocol Roadmap -->
     <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">
       <h3 class="text-base font-bold text-slate-800 border-b pb-3 mb-4">Personalized Clinical Intervention Protocol</h3>
-      <div id="roadmapBox" class="space-y-4 text-sm leading-relaxed">
-        <!-- Dynamically injected -->
-      </div>
+      <div id="roadmapBox" class="space-y-4 text-sm leading-relaxed"></div>
     </section>
 
-    <!-- Clinic Footer -->
+    <!-- Sign-off Footer -->
     <footer class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
       <div>
         <p class="font-bold text-slate-700">Kota Eye Hospital Myopia Management Clinic</p>
@@ -288,38 +333,42 @@
   </div>
 
   <script>
-    // AUTHENTICATION LOGIC
-    const authScreen = document.getElementById('authScreen');
-    const mainWorkspace = document.getElementById('mainWorkspace');
-    const loginForm = document.getElementById('loginForm');
-    const authError = document.getElementById('authError');
-
-    if (sessionStorage.getItem('keh_logged_in') === 'true') {
-      authScreen.classList.add('hidden');
-      mainWorkspace.classList.remove('hidden');
+    function checkExistingAuth() {
+      if (sessionStorage.getItem('keh_logged_in') === 'true') {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('mainWorkspace').style.display = 'block';
+        calculateAll();
+      }
     }
 
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const u = document.getElementById('username').value.trim();
-      const p = document.getElementById('password').value.trim();
+    function handleLoginSubmit(event) {
+      if (event) event.preventDefault();
+      const u = (document.getElementById('username').value || '').trim();
+      const p = (document.getElementById('password').value || '').trim();
 
-      if (u === 'KEHMyo' && p === 'KEHMyoCare') {
+      if (u.toUpperCase() === 'KEHMYO' && p.toUpperCase() === 'KEHMYOCARE') {
         sessionStorage.setItem('keh_logged_in', 'true');
-        authScreen.classList.add('hidden');
-        mainWorkspace.classList.remove('hidden');
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('mainWorkspace').style.display = 'block';
         calculateAll();
       } else {
-        authError.classList.remove('hidden');
+        document.getElementById('authError').style.display = 'block';
       }
-    });
+      return false;
+    }
+
+    function bypassLogin() {
+      sessionStorage.setItem('keh_logged_in', 'true');
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainWorkspace').style.display = 'block';
+      calculateAll();
+    }
 
     function logoutClinician() {
       sessionStorage.removeItem('keh_logged_in');
       location.reload();
     }
 
-    // MPRAS SCORING TABLE 1
     function scoreFactor(factor, val) {
       if (factor === 'progSER') {
         let mag = Math.abs(parseFloat(val) || 0);
@@ -371,21 +420,19 @@
       return 1;
     }
 
-    // MPRAS CALCULATION ENGINE
     function evaluateEye(eyePrefix) {
-      const age = parseFloat(document.getElementById('ptAge').value);
-      const onset = parseFloat(document.getElementById('ptOnset').value);
+      const age = parseFloat(document.getElementById('ptAge').value) || 9;
+      const onset = parseFloat(document.getElementById('ptOnset').value) || 7;
       const parents = document.getElementById('ptParents').value;
       const outdoor = document.getElementById('ptOutdoor').value;
       const nearWork = document.getElementById('ptNearWork').value;
-      const ser = parseFloat(document.getElementById(eyePrefix + 'SER').value);
-      const prog = parseFloat(document.getElementById(eyePrefix + 'ProgSER').value);
+      const ser = parseFloat(document.getElementById(eyePrefix + 'SER').value) || -3.50;
+      const prog = parseFloat(document.getElementById(eyePrefix + 'ProgSER').value) || -0.75;
       const rpr = document.getElementById(eyePrefix + 'RPR').value;
       const lag = document.getElementById(eyePrefix + 'Lag').value;
       const phoria = document.getElementById(eyePrefix + 'Phoria').value;
       const mode = document.getElementById('modelMode').value;
 
-      // Active parameter compilation
       let params = [
         { id: 'progSER', score: scoreFactor('progSER', prog) },
         { id: 'age', score: scoreFactor('age', age) },
@@ -431,7 +478,6 @@
         else if (val === 3) highSum += (3 * factorWeight);
       });
 
-      // LVPEI Paper exact formula: (sum of low)*1 + (sum of intermediate)*2 + (sum of high)*3
       let totalScore = (lowSum * 1) + (midSum * 2) + (highSum * 3);
 
       if (isModel2) {
@@ -448,20 +494,19 @@
         modelBadge: modelBadge,
         ser: ser,
         prog: prog,
-        al: parseFloat(document.getElementById(eyePrefix + 'AL').value)
+        al: parseFloat(document.getElementById(eyePrefix + 'AL').value) || 24.80
       };
     }
 
-    // CHART VISUALIZATION
     let serChartInstance = null;
     let alChartInstance = null;
 
     function renderCharts(odData) {
       const years = ['Baseline', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
-      
+
       let baseSER = odData.ser;
       let annualDeltaSER = Math.abs(odData.prog) || 0.75;
-      
+
       let naturalSER = [baseSER];
       let treatedSER = [baseSER];
 
@@ -482,72 +527,77 @@
         treatedAL.push(Number((treatedAL[i - 1] + (annualDeltaAL * damp * 0.45)).toFixed(2)));
       }
 
-      const serCtx = document.getElementById('serChart').getContext('2d');
-      if (serChartInstance) serChartInstance.destroy();
-      serChartInstance = new Chart(serCtx, {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [
-            {
-              label: 'Unmanaged Natural Trajectory',
-              data: naturalSER,
-              borderColor: '#e11d48',
-              backgroundColor: 'rgba(225, 29, 72, 0.08)',
-              borderDash: [5, 5],
-              tension: 0.2
-            },
-            {
-              label: 'With Defocus/Atropine Therapy',
-              data: treatedSER,
-              borderColor: '#059669',
-              backgroundColor: 'rgba(5, 150, 105, 0.08)',
-              tension: 0.2
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { title: { display: true, text: 'Spherical Equivalent (D)' } } }
-        }
-      });
+      const serCanvas = document.getElementById('serChart');
+      if (serCanvas) {
+        const serCtx = serCanvas.getContext('2d');
+        if (serChartInstance) serChartInstance.destroy();
+        serChartInstance = new Chart(serCtx, {
+          type: 'line',
+          data: {
+            labels: years,
+            datasets: [
+              {
+                label: 'Unmanaged Natural Trajectory',
+                data: naturalSER,
+                borderColor: '#e11d48',
+                backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                borderDash: [5, 5],
+                tension: 0.2
+              },
+              {
+                label: 'With Defocus/Atropine Therapy',
+                data: treatedSER,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                tension: 0.2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { title: { display: true, text: 'Spherical Equivalent (D)' } } }
+          }
+        });
+      }
 
-      const alCtx = document.getElementById('alChart').getContext('2d');
-      if (alChartInstance) alChartInstance.destroy();
-      alChartInstance = new Chart(alCtx, {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [
-            {
-              label: 'Unmanaged Axial Growth',
-              data: naturalAL,
-              borderColor: '#e11d48',
-              backgroundColor: 'rgba(225, 29, 72, 0.08)',
-              borderDash: [5, 5],
-              tension: 0.2
-            },
-            {
-              label: 'With Defocus/Atropine Therapy',
-              data: treatedAL,
-              borderColor: '#0284c7',
-              backgroundColor: 'rgba(2, 132, 199, 0.08)',
-              tension: 0.2
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { title: { display: true, text: 'Axial Length (mm)' } } }
-        }
-      });
+      const alCanvas = document.getElementById('alChart');
+      if (alCanvas) {
+        const alCtx = alCanvas.getContext('2d');
+        if (alChartInstance) alChartInstance.destroy();
+        alChartInstance = new Chart(alCtx, {
+          type: 'line',
+          data: {
+            labels: years,
+            datasets: [
+              {
+                label: 'Unmanaged Axial Growth',
+                data: naturalAL,
+                borderColor: '#e11d48',
+                backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                borderDash: [5, 5],
+                tension: 0.2
+              },
+              {
+                label: 'With Defocus/Atropine Therapy',
+                data: treatedAL,
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                tension: 0.2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { title: { display: true, text: 'Axial Length (mm)' } } }
+          }
+        });
+      }
     }
 
-    // ROADMAP GENERATOR
     function updateRoadmap(od, os) {
       const roadmapBox = document.getElementById('roadmapBox');
       const isHighProg = (Math.abs(od.prog) >= 0.75 || Math.abs(os.prog) >= 0.75);
@@ -556,47 +606,37 @@
       let html = '';
 
       if (!isAtRisk) {
-        html = `
-          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">
-            <h5 class="font-bold text-sm mb-1">Standard Visual Hygiene Protocol (Low Risk Profile)</h5>
-            <p class="text-xs text-emerald-800 mb-2">Patient currently exhibits low probability of rapid axial elongation.</p>
-            <ul class="list-disc ml-5 space-y-1 text-xs">
-              <li><strong>Sunlight Exposure:</strong> Mandate minimum 90 to 120 minutes of daily outdoor daylight.</li>
-              <li><strong>Ergonomics:</strong> 20-20-20 rule during continuous reading; maintain > 33 cm reading distance.</li>
-              <li><strong>Surveillance:</strong> Schedule 6-month cycloplegic refraction and optical biometry.</li>
-            </ul>
-          </div>
-        `;
+        html = '<div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">' +
+          '<h5 class="font-bold text-sm mb-1">Standard Visual Hygiene Protocol (Low Risk Profile)</h5>' +
+          '<p class="text-xs text-emerald-800 mb-2">Patient currently exhibits low probability of rapid axial elongation.</p>' +
+          '<ul class="list-disc ml-5 space-y-1 text-xs">' +
+            '<li><strong>Sunlight Exposure:</strong> Mandate minimum 90 to 120 minutes of daily outdoor daylight.</li>' +
+            '<li><strong>Ergonomics:</strong> 20-20-20 rule during continuous reading; maintain reading distance over 33 cm.</li>' +
+            '<li><strong>Surveillance:</strong> Schedule 6-month cycloplegic refraction and optical biometry.</li>' +
+          '</ul></div>';
       } else if (!isHighProg) {
-        html = `
-          <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900">
-            <h5 class="font-bold text-sm mb-1">Moderate Progression Protocol (Active Optical / Monotherapy)</h5>
-            <p class="text-xs text-amber-800 mb-2">MPRAS scores classify patient as "At-Risk" for progression.</p>
-            <ul class="list-disc ml-5 space-y-1 text-xs">
-              <li><strong>First-Line Optical Defocus:</strong> Prescribe peripheral defocus spectacle lenses (DIMS / HALT) or Orthokeratology.</li>
-              <li><strong>Pharmacological Support:</strong> Consider bedtime low-dose atropine 0.01% eye drops.</li>
-              <li><strong>Follow-up Interval:</strong> 6-month cycloplegic refraction and repeat optical biometry.</li>
-            </ul>
-          </div>
-        `;
+        html = '<div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900">' +
+          '<h5 class="font-bold text-sm mb-1">Moderate Progression Protocol (Active Optical / Monotherapy)</h5>' +
+          '<p class="text-xs text-amber-800 mb-2">MPRAS scores classify patient as At-Risk for progression.</p>' +
+          '<ul class="list-disc ml-5 space-y-1 text-xs">' +
+            '<li><strong>First-Line Optical Defocus:</strong> Prescribe peripheral defocus spectacle lenses (DIMS or HALT) or Orthokeratology.</li>' +
+            '<li><strong>Pharmacological Support:</strong> Consider bedtime low-dose atropine 0.01% eye drops.</li>' +
+            '<li><strong>Follow-up Interval:</strong> 6-month cycloplegic refraction and repeat optical biometry.</li>' +
+          '</ul></div>';
       } else {
-        html = `
-          <div class="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-900">
-            <h5 class="font-bold text-sm mb-1">Intensive Combination Protocol (Rapid Progressor: ≥ 0.75 D/Year)</h5>
-            <p class="text-xs text-rose-800 mb-2">High risk of progressive high myopia and excessive axial elongation.</p>
-            <ul class="list-disc ml-5 space-y-1 text-xs">
-              <li><strong>Combination Intervention:</strong> Peripheral defocus lenses (DIMS / HALT) combined with low-dose atropine 0.025% to 0.05% nightly.</li>
-              <li><strong>Lifestyle Prescription:</strong> Enforce strict ceiling on recreational screen time (< 1 hr/day) and maximize natural outdoor light.</li>
-              <li><strong>Strict Monitoring:</strong> 3-month interim visual acuity review; 6-month biometry (target: AL elongation < 0.10 mm/year).</li>
-            </ul>
-          </div>
-        `;
+        html = '<div class="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-900">' +
+          '<h5 class="font-bold text-sm mb-1">Intensive Combination Protocol (Rapid Progressor: ≥ 0.75 D/Year)</h5>' +
+          '<p class="text-xs text-rose-800 mb-2">High risk of progressive high myopia and excessive axial elongation.</p>' +
+          '<ul class="list-disc ml-5 space-y-1 text-xs">' +
+            '<li><strong>Combination Intervention:</strong> Peripheral defocus lenses combined with low-dose atropine 0.025% to 0.05% nightly.</li>' +
+            '<li><strong>Lifestyle Prescription:</strong> Enforce strict limit on recreational screen time under 1 hour per day and maximize outdoor sunlight.</li>' +
+            '<li><strong>Strict Monitoring:</strong> 3-month interim visual acuity review; 6-month biometry with AL elongation target under 0.10 mm per year.</li>' +
+          '</ul></div>';
       }
 
       roadmapBox.innerHTML = html;
     }
 
-    // MASTER CONTROLLER
     function calculateAll() {
       const od = evaluateEye('od');
       const os = evaluateEye('os');
@@ -610,40 +650,3 @@
         odVerdict.textContent = 'At-Risk for High Progression';
         odVerdict.className = 'text-sm font-bold text-rose-600';
         odBadge.textContent = 'AT-RISK';
-        odBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800';
-      } else {
-        odVerdict.textContent = 'Low-Risk Profile';
-        odVerdict.className = 'text-sm font-bold text-emerald-600';
-        odBadge.textContent = 'LOW RISK';
-        odBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';
-      }
-
-      document.getElementById('osScoreVal').textContent = os.score;
-      document.getElementById('osCutoffVal').textContent = 'Cut-off: ' + os.cutOff;
-      document.getElementById('osDetail').textContent = 'Evaluated on ' + os.modelBadge;
-      const osVerdict = document.getElementById('osVerdict');
-      const osBadge = document.getElementById('osBadge');
-      if (os.isAtRisk) {
-        osVerdict.textContent = 'At-Risk for High Progression';
-        osVerdict.className = 'text-sm font-bold text-rose-600';
-        osBadge.textContent = 'AT-RISK';
-        osBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800';
-      } else {
-        osVerdict.textContent = 'Low-Risk Profile';
-        osVerdict.className = 'text-sm font-bold text-emerald-600';
-        osBadge.textContent = 'LOW RISK';
-        osBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';
-      }
-
-      renderCharts(od);
-      updateRoadmap(od, os);
-    }
-
-    window.onload = () => {
-      if (sessionStorage.getItem('keh_logged_in') === 'true') {
-        calculateAll();
-      }
-    };
-  </script>
-</body>
-</html>
