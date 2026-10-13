@@ -1,0 +1,666 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!DOCTYPE html>\
+<html lang="en">\
+<head>\
+  <meta charset="UTF-8">\
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">\
+  <title>Kota Eye Hospital - Myopia Progression Risk Calculator</title>\
+  <script src="https://cdn.tailwindcss.com"></script>\
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\
+  <style>\
+    @media print \{\
+      body \{ background: white !important; font-size: 11pt; \}\
+      .no-print \{ display: none !important; \}\
+      .print-only \{ display: block !important; \}\
+      .page-break \{ page-break-before: always; \}\
+      .card-box \{ border: 1px solid #cbd5e1 !important; box-shadow: none !important; \}\
+    \}\
+  </style>\
+</head>\
+<body class="bg-slate-50 text-slate-900 min-h-screen">\
+\
+  <!-- AUTHENTICATION SCREEN -->\
+  <div id="authScreen" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">\
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border border-slate-100">\
+      <div class="text-center mb-6">\
+        <h2 class="text-2xl font-bold text-slate-800">Kota Eye Hospital</h2>\
+        <p class="text-sm font-medium text-emerald-600 mt-1">Myopia Care & Research Foundation</p>\
+        <p class="text-xs text-slate-400 mt-2">MPRAS Clinical Risk Calculator Login</p>\
+      </div>\
+      <form id="loginForm" class="space-y-4">\
+        <div>\
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Username</label>\
+          <input type="text" id="username" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="KEHMyo">\
+        </div>\
+        <div>\
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>\
+          <input type="password" id="password" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="\'95\'95\'95\'95\'95\'95\'95\'95">\
+        </div>\
+        <p id="authError" class="text-xs text-rose-500 hidden font-medium">Invalid clinician credentials.</p>\
+        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-md transition duration-150">Login to OPD Portal</button>\
+      </form>\
+    </div>\
+  </div>\
+\
+  <!-- CLINICAL WORKSPACE -->\
+  <div id="mainWorkspace" class="hidden max-w-7xl mx-auto px-4 py-6">\
+    <!-- Top Action Bar -->\
+    <header class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 mb-6 gap-4">\
+      <div>\
+        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Kota Eye Hospital Myopia Risk Evaluator</h1>\
+        <p class="text-xs text-slate-500">Based on LVPEI Myopia Progression Risk Assessment Score Protocol</p>\
+      </div>\
+      <div class="flex items-center space-x-3 no-print">\
+        <button onclick="calculateAll()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition">Calculate Scores</button>\
+        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow transition">Print / Save PDF</button>\
+        <button onclick="logoutClinician()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 text-xs font-semibold rounded-lg border border-rose-200">Logout</button>\
+      </div>\
+    </header>\
+\
+    <!-- Patient Header Card -->\
+    <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">\
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">\
+        <div>\
+          <label class="block text-slate-500 mb-1">Patient Name</label>\
+          <input type="text" id="ptName" placeholder="e.g. Master Aarav Sharma" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300">\
+        </div>\
+        <div>\
+          <label class="block text-slate-500 mb-1">OPD / MR Number</label>\
+          <input type="text" id="ptId" placeholder="KEH-2026-XXXX" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300">\
+        </div>\
+        <div>\
+          <label class="block text-slate-500 mb-1">Chronological Age (Yrs)</label>\
+          <input type="number" id="ptAge" value="9" min="3" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-slate-500 mb-1">Age of Onset (Yrs)</label>\
+          <input type="number" id="ptOnset" value="7" min="1" max="40" class="w-full p-2 border rounded bg-slate-50 focus:bg-white border-slate-300" onchange="calculateAll()">\
+        </div>\
+      </div>\
+    </section>\
+\
+    <!-- Bilateral Entry Grid -->\
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">\
+      \
+      <!-- Environmental & Shared Parameters (4 Cols) -->\
+      <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 card-box">\
+        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wide border-b pb-2">Lifestyle & Genetics</h3>\
+        <div>\
+          <label class="block text-xs font-medium text-slate-600 mb-1">Myopic Parents</label>\
+          <select id="ptParents" class="w-full p-2 border rounded border-slate-300 bg-slate-50" onchange="calculateAll()">\
+            <option value="0">0 (Both Non-Myopic)</option>\
+            <option value="1">1 Parent Myopic</option>\
+            <option value="2" selected>2 Parents Myopic</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs font-medium text-slate-600 mb-1">Outdoor Sunlight Exposure (Hours/day)</label>\
+          <select id="ptOutdoor" class="w-full p-2 border rounded border-slate-300 bg-slate-50" onchange="calculateAll()">\
+            <option value="high">> 2 hours/day (Low Risk)</option>\
+            <option value="mid">1 - 2 hours/day (Moderate)</option>\
+            <option value="low" selected>< 1 hour/day (High Risk)</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs font-medium text-slate-600 mb-1">Near Work Screen/Books (Hours/day)</label>\
+          <select id="ptNearWork" class="w-full p-2 border rounded border-slate-300 bg-slate-50" onchange="calculateAll()">\
+            <option value="low">\uc0\u8804  7 hours/day (Low Risk)</option>\
+            <option value="mid" selected>> 7 to 10 hours/day (Moderate)</option>\
+            <option value="high">> 10 hours/day (High Risk)</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs font-medium text-slate-600 mb-1">Scoring Calculation Mode</label>\
+          <select id="modelMode" class="w-full p-2 border rounded border-slate-300 bg-slate-50" onchange="calculateAll()">\
+            <option value="auto">Adaptive Auto-Model (1a to 1g)</option>\
+            <option value="model1">Model 1 (Unweighted Standard)</option>\
+            <option value="model2">Model 2 (Progression Weighted)</option>\
+          </select>\
+        </div>\
+      </div>\
+\
+      <!-- Right Eye (OD) Column (4 Cols) -->\
+      <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-blue-200 shadow-sm space-y-3 card-box">\
+        <div class="flex items-center justify-between border-b pb-2">\
+          <h3 class="text-sm font-bold text-blue-700 uppercase tracking-wide">Right Eye (OD)</h3>\
+          <span id="odBadge" class="text-xs px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800">Calculating</span>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Current Cycloplegic SER (Diopters)</label>\
+          <input type="number" step="0.25" id="odSER" value="-3.50" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Progression in Past Year (D/year)</label>\
+          <input type="number" step="0.25" id="odProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Axial Length (mm)</label>\
+          <input type="number" step="0.01" id="odAL" value="24.80" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Relative Peripheral Defocus (RPR at \'b130\'b0)</label>\
+          <select id="odRPR" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">< +0.25 D</option>\
+            <option value="mid" selected>+0.25 to +0.50 D</option>\
+            <option value="high">> +0.50 D</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Accommodative Lag (MEM Retinoscopy)</label>\
+          <select id="odLag" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">\uc0\u8804  +0.50 D</option>\
+            <option value="mid">+0.75 to +1.00 D</option>\
+            <option value="high" selected>> +1.00 D</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Near Esophoria (Modified Thorington)</label>\
+          <select id="odPhoria" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">\uc0\u8804  2 PD</option>\
+            <option value="mid" selected>> 2 to < 6 PD</option>\
+            <option value="high">\uc0\u8805  6 PD</option>\
+          </select>\
+        </div>\
+      </div>\
+\
+      <!-- Left Eye (OS) Column (4 Cols) -->\
+      <div class="lg:col-span-4 bg-white p-5 rounded-xl border border-teal-200 shadow-sm space-y-3 card-box">\
+        <div class="flex items-center justify-between border-b pb-2">\
+          <h3 class="text-sm font-bold text-teal-700 uppercase tracking-wide">Left Eye (OS)</h3>\
+          <span id="osBadge" class="text-xs px-2 py-0.5 rounded font-bold bg-teal-100 text-teal-800">Calculating</span>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Current Cycloplegic SER (Diopters)</label>\
+          <input type="number" step="0.25" id="osSER" value="-3.25" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Progression in Past Year (D/year)</label>\
+          <input type="number" step="0.25" id="osProgSER" value="-0.75" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Axial Length (mm)</label>\
+          <input type="number" step="0.01" id="osAL" value="24.70" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Relative Peripheral Defocus (RPR at \'b130\'b0)</label>\
+          <select id="osRPR" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">< +0.25 D</option>\
+            <option value="mid" selected>+0.25 to +0.50 D</option>\
+            <option value="high">> +0.50 D</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Accommodative Lag (MEM Retinoscopy)</label>\
+          <select id="osLag" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">\uc0\u8804  +0.50 D</option>\
+            <option value="mid">+0.75 to +1.00 D</option>\
+            <option value="high" selected>> +1.00 D</option>\
+          </select>\
+        </div>\
+        <div>\
+          <label class="block text-xs text-slate-600 mb-1">Near Esophoria (Modified Thorington)</label>\
+          <select id="osPhoria" class="w-full p-2 border rounded border-slate-300" onchange="calculateAll()">\
+            <option value="none">Not Recorded (Downgrade Model)</option>\
+            <option value="low">\uc0\u8804  2 PD</option>\
+            <option value="mid" selected>> 2 to < 6 PD</option>\
+            <option value="high">\uc0\u8805  6 PD</option>\
+          </select>\
+        </div>\
+      </div>\
+\
+    </div>\
+\
+    <!-- Results & Score Diagnostic Banner -->\
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">\
+      <div id="odCard" class="p-5 rounded-xl border bg-white shadow-sm card-box">\
+        <h4 class="font-bold text-slate-800 text-sm mb-1">Right Eye (OD) MPRAS Outcome</h4>\
+        <div class="flex items-baseline space-x-3 my-2">\
+          <span id="odScoreVal" class="text-3xl font-extrabold text-blue-600">0</span>\
+          <span id="odCutoffVal" class="text-xs text-slate-500 font-medium">Cut-off: 41.50</span>\
+        </div>\
+        <p id="odVerdict" class="text-sm font-semibold text-rose-600">At-Risk for High Progression</p>\
+        <p id="odDetail" class="text-xs text-slate-500 mt-1">Evaluated on Model-1a (10 Risk Factors)</p>\
+      </div>\
+\
+      <div id="osCard" class="p-5 rounded-xl border bg-white shadow-sm card-box">\
+        <h4 class="font-bold text-slate-800 text-sm mb-1">Left Eye (OS) MPRAS Outcome</h4>\
+        <div class="flex items-baseline space-x-3 my-2">\
+          <span id="osScoreVal" class="text-3xl font-extrabold text-teal-600">0</span>\
+          <span id="osCutoffVal" class="text-xs text-slate-500 font-medium">Cut-off: 41.50</span>\
+        </div>\
+        <p id="osVerdict" class="text-sm font-semibold text-rose-600">At-Risk for High Progression</p>\
+        <p id="osDetail" class="text-xs text-slate-500 mt-1">Evaluated on Model-1a (10 Risk Factors)</p>\
+      </div>\
+    </div>\
+\
+    <!-- Projection Curves (Diopters & Axial Length) -->\
+    <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">\
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b mb-4">\
+        <div>\
+          <h3 class="text-base font-bold text-slate-800">5-Year Progression Trajectory Curves</h3>\
+          <p class="text-xs text-slate-500">Natural Elongation vs Optical & Pharmacological Therapy</p>\
+        </div>\
+        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded">Simulation Model</span>\
+      </div>\
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">\
+        <div>\
+          <h4 class="text-xs font-bold text-center text-slate-600 uppercase mb-2">Refraction Trajectory (OD SER in Diopters)</h4>\
+          <div class="h-64">\
+            <canvas id="serChart"></canvas>\
+          </div>\
+        </div>\
+        <div>\
+          <h4 class="text-xs font-bold text-center text-slate-600 uppercase mb-2">Axial Length Growth (OD AL in mm)</h4>\
+          <div class="h-64">\
+            <canvas id="alChart"></canvas>\
+          </div>\
+        </div>\
+      </div>\
+    </section>\
+\
+    <!-- Clinical Decision & Treatment Roadmap -->\
+    <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm mb-6 card-box">\
+      <h3 class="text-base font-bold text-slate-800 border-b pb-3 mb-4">Personalized Clinical Intervention Protocol</h3>\
+      <div id="roadmapBox" class="space-y-4 text-sm leading-relaxed">\
+        <!-- Rendered Dynamically -->\
+      </div>\
+    </section>\
+\
+    <!-- Clinic Footer / Sign-off -->\
+    <footer class="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">\
+      <div>\
+        <p class="font-bold text-slate-700">Kota Eye Hospital Myopia Management Clinic</p>\
+        <p>Report generated via validated MPRAS diagnostic guidelines.</p>\
+      </div>\
+      <div class="text-right">\
+        <p class="font-semibold text-slate-800">Examining Clinician</p>\
+        <p>Signature / Seal</p>\
+      </div>\
+    </footer>\
+\
+  </div>\
+\
+  <script>\
+    // 1. AUTHENTICATION LOGIC\
+    const authScreen = document.getElementById('authScreen');\
+    const mainWorkspace = document.getElementById('mainWorkspace');\
+    const loginForm = document.getElementById('loginForm');\
+    const authError = document.getElementById('authError');\
+\
+    if (sessionStorage.getItem('keh_logged_in') === 'true') \{\
+      authScreen.classList.add('hidden');\
+      mainWorkspace.classList.remove('hidden');\
+    \}\
+\
+    loginForm.addEventListener('submit', (e) => \{\
+      e.preventDefault();\
+      const u = document.getElementById('username').value.trim();\
+      const p = document.getElementById('password').value.trim();\
+\
+      if (u === 'KEHMyo' && p === 'KEHMyoCare') \{\
+        sessionStorage.setItem('keh_logged_in', 'true');\
+        authScreen.classList.add('hidden');\
+        mainWorkspace.classList.remove('hidden');\
+        calculateAll();\
+      \} else \{\
+        authError.classList.remove('hidden');\
+      \}\
+    \});\
+\
+    function logoutClinician() \{\
+      sessionStorage.removeItem('keh_logged_in');\
+      location.reload();\
+    \}\
+\
+    // 2. SCORING TABLE 1 IMPLEMENTATION\
+    function scoreFactor(factor, val) \{\
+      if (factor === 'progSER') \{\
+        // change in SER: > -0.50 (low:1), -0.50 to -0.75 (mid:2), < -0.75 (high:3)\
+        if (val > -0.50) return 1;\
+        if (val >= -0.75) return 2;\
+        return 3;\
+      \}\
+      if (factor === 'age' || factor === 'onset') \{\
+        // >=18 (1), >13 to <18 (2), <=13 (3)\
+        if (val >= 18) return 1;\
+        if (val > 13) return 2;\
+        return 3;\
+      \}\
+      if (factor === 'ser') \{\
+        // >= -3.00 (1), < -3.00 to > -6.00 (2), <= -6.00 (3)\
+        if (val >= -3.00) return 1;\
+        if (val > -6.00) return 2;\
+        return 3;\
+      \}\
+      if (factor === 'outdoor') \{\
+        // >2 (1), 1-2 (2), <1 (3)\
+        if (val === 'high') return 1;\
+        if (val === 'mid') return 2;\
+        return 3;\
+      \}\
+      if (factor === 'rpr') \{\
+        // < +0.25 (1), >= +0.25 to +0.50 (2), > +0.50 (3)\
+        if (val === 'low') return 1;\
+        if (val === 'mid') return 2;\
+        return 3;\
+      \}\
+      if (factor === 'nearWork') \{\
+        // <=7 (1), >7 to 10 (2), >10 (3)\
+        if (val === 'low') return 1;\
+        if (val === 'mid') return 2;\
+        return 3;\
+      \}\
+      if (factor === 'phoria') \{\
+        // <=2 (1), >2 to <6 (2), >=6 (3)\
+        if (val === 'low') return 1;\
+        if (val === 'mid') return 2;\
+        return 3;\
+      \}\
+      if (factor === 'lag') \{\
+        // <= +0.50 (1), +0.75 to +1.00 (2), > +1.00 (3)\
+        if (val === 'low') return 1;\
+        if (val === 'mid') return 2;\
+        return 3;\
+      \}\
+      if (factor === 'parents') \{\
+        if (val === 0) return 1;\
+        if (val === 1) return 2;\
+        return 3;\
+      \}\
+      return 1;\
+    \}\
+\
+    // MPRAS Calculation Formula:\
+    // Low points * 1 + Intermediate points * 2 + High points * 3\
+    function evaluateEye(eyePrefix) \{\
+      const age = parseFloat(document.getElementById('ptAge').value);\
+      const onset = parseFloat(document.getElementById('ptOnset').value);\
+      const parents = parseInt(document.getElementById('ptParents').value);\
+      const outdoor = document.getElementById('ptOutdoor').value;\
+      const nearWork = document.getElementById('ptNearWork').value;\
+      const ser = parseFloat(document.getElementById(eyePrefix + 'SER').value);\
+      const prog = parseFloat(document.getElementById(eyePrefix + 'ProgSER').value);\
+      const rpr = document.getElementById(eyePrefix + 'RPR').value;\
+      const lag = document.getElementById(eyePrefix + 'Lag').value;\
+      const phoria = document.getElementById(eyePrefix + 'Phoria').value;\
+      const mode = document.getElementById('modelMode').value;\
+\
+      // Identify active parameters\
+      let params = [\
+        \{ id: 'progSER', score: scoreFactor('progSER', prog) \},\
+        \{ id: 'age', score: scoreFactor('age', age) \},\
+        \{ id: 'ser', score: scoreFactor('ser', ser) \},\
+        \{ id: 'onset', score: scoreFactor('onset', onset) \},\
+        \{ id: 'outdoor', score: scoreFactor('outdoor', outdoor) \}\
+      ];\
+\
+      if (rpr !== 'none') params.push(\{ id: 'rpr', score: scoreFactor('rpr', rpr) \});\
+      if (nearWork !== 'none') params.push(\{ id: 'nearWork', score: scoreFactor('nearWork', nearWork) \});\
+      if (phoria !== 'none') params.push(\{ id: 'phoria', score: scoreFactor('phoria', phoria) \});\
+      if (lag !== 'none') params.push(\{ id: 'lag', score: scoreFactor('lag', lag) \});\
+      if (parents !== 'none') params.push(\{ id: 'parents', score: scoreFactor('parents', parents) \});\
+\
+      const count = params.length;\
+      let modelBadge = 'Model 1a';\
+      let cutOff = 41.50;\
+\
+      if (count === 10) \{ modelBadge = 'Model 1a'; cutOff = 41.50; \}\
+      else if (count === 9) \{ modelBadge = 'Model 1b'; cutOff = 39.50; \}\
+      else if (count === 8) \{ modelBadge = 'Model 1c'; cutOff = 38.50; \}\
+      else if (count === 7) \{ modelBadge = 'Model 1d'; cutOff = 37.50; \}\
+      else if (count === 6) \{ modelBadge = 'Model 1e'; cutOff = 33.50; \}\
+      else if (count === 5) \{ modelBadge = 'Model 1f'; cutOff = 29.50; \}\
+      else \{ modelBadge = 'Model 1g (4-Factor)'; cutOff = 22.00; \}\
+\
+      let totalScore = 0;\
+      let isModel2 = (mode === 'model2');\
+\
+      params.forEach(p => \{\
+        let pts = p.score;\
+        let weight = pts; // 1, 2, or 3 points multiplier\
+\
+        if (isModel2) \{\
+          // Model-2: 2x weight on annual progression\
+          if (p.id === 'progSER') \{\
+            if (pts === 2) weight = 4;\
+            if (pts === 3) weight = 6;\
+          \}\
+          // If age >= 18, 0.5x multiplier on parents & outdoors\
+          if (age >= 18 && (p.id === 'parents' || p.id === 'outdoor')) \{\
+            if (pts === 2) weight = 1;\
+            if (pts === 3) weight = 1.5;\
+          \}\
+        \}\
+        totalScore += (pts * weight);\
+      \});\
+\
+      if (isModel2) \{\
+        cutOff = 41.75;\
+        modelBadge = 'Model 2 (Weighted)';\
+      \}\
+\
+      const isAtRisk = totalScore >= cutOff;\
+\
+      return \{\
+        score: totalScore.toFixed(2),\
+        cutOff: cutOff.toFixed(2),\
+        isAtRisk: isAtRisk,\
+        modelBadge: modelBadge,\
+        ser: ser,\
+        prog: prog,\
+        al: parseFloat(document.getElementById(eyePrefix + 'AL').value)\
+      \};\
+    \}\
+\
+    // 3. CHARTING & PROJECTION SIMULATION\
+    let serChartInstance = null;\
+    let alChartInstance = null;\
+\
+    function renderCharts(odData) \{\
+      const years = ['Baseline', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];\
+      \
+      let baseSER = odData.ser;\
+      let annualDeltaSER = Math.abs(odData.prog) || 0.75;\
+      \
+      // Projections\
+      let naturalSER = [baseSER];\
+      let treatedSER = [baseSER];\
+\
+      let baseAL = odData.al || 24.50;\
+      let annualDeltaAL = (annualDeltaSER * 0.35); // physiological ratio\
+      let naturalAL = [baseAL];\
+      let treatedAL = [baseAL];\
+\
+      for (let i = 1; i <= 5; i++) \{\
+        // Natural progression with age damping\
+        let damp = 1 - (i * 0.08);\
+        let curNaturalDelta = annualDeltaSER * damp;\
+        let curTreatedDelta = curNaturalDelta * 0.45; // 55% efficacy with treatment\
+\
+        naturalSER.push(Number((naturalSER[i - 1] - curNaturalDelta).toFixed(2)));\
+        treatedSER.push(Number((treatedSER[i - 1] - curTreatedDelta).toFixed(2)));\
+\
+        naturalAL.push(Number((naturalAL[i - 1] + (annualDeltaAL * damp)).toFixed(2)));\
+        treatedAL.push(Number((treatedAL[i - 1] + (annualDeltaAL * damp * 0.45)).toFixed(2)));\
+      \}\
+\
+      // Render SER Chart\
+      const serCtx = document.getElementById('serChart').getContext('2d');\
+      if (serChartInstance) serChartInstance.destroy();\
+      serChartInstance = new Chart(serCtx, \{\
+        type: 'line',\
+        data: \{\
+          labels: years,\
+          datasets: [\
+            \{\
+              label: 'Unmanaged Natural Trajectory',\
+              data: naturalSER,\
+              borderColor: '#e11d48',\
+              backgroundColor: 'rgba(225, 29, 72, 0.1)',\
+              borderDash: [5, 5],\
+              tension: 0.2\
+            \},\
+            \{\
+              label: 'With Defocus/Atropine Therapy',\
+              data: treatedSER,\
+              borderColor: '#059669',\
+              backgroundColor: 'rgba(5, 150, 105, 0.1)',\
+              tension: 0.2\
+            \}\
+          ]\
+        \},\
+        options: \{\
+          responsive: true,\
+          maintainAspectRatio: false,\
+          plugins: \{ legend: \{ position: 'bottom' \} \},\
+          scales: \{ y: \{ title: \{ display: true, text: 'Spherical Equivalent (D)' \} \} \}\
+        \}\
+      \});\
+\
+      // Render AL Chart\
+      const alCtx = document.getElementById('alChart').getContext('2d');\
+      if (alChartInstance) alChartInstance.destroy();\
+      alChartInstance = new Chart(alCtx, \{\
+        type: 'line',\
+        data: \{\
+          labels: years,\
+          datasets: [\
+            \{\
+              label: 'Unmanaged Axial Growth',\
+              data: naturalAL,\
+              borderColor: '#e11d48',\
+              backgroundColor: 'rgba(225, 29, 72, 0.1)',\
+              borderDash: [5, 5],\
+              tension: 0.2\
+            \},\
+            \{\
+              label: 'With Defocus/Atropine Therapy',\
+              data: treatedAL,\
+              borderColor: '#0284c7',\
+              backgroundColor: 'rgba(2, 132, 199, 0.1)',\
+              tension: 0.2\
+            \}\
+          ]\
+        \},\
+        options: \{\
+          responsive: true,\
+          maintainAspectRatio: false,\
+          plugins: \{ legend: \{ position: 'bottom' \} \},\
+          scales: \{ y: \{ title: \{ display: true, text: 'Axial Length (mm)' \} \} \}\
+        \}\
+      \});\
+    \}\
+\
+    // 4. ROADMAP GENERATION\
+    function updateRoadmap(od, os) \{\
+      const roadmapBox = document.getElementById('roadmapBox');\
+      const isHighProg = (Math.abs(od.prog) >= 0.75 || Math.abs(os.prog) >= 0.75);\
+      const isAtRisk = (od.isAtRisk || os.isAtRisk);\
+\
+      let html = '';\
+\
+      if (!isAtRisk) \{\
+        html = `\
+          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">\
+            <h5 class="font-bold text-base flex items-center mb-1">Standard Visual Hygiene Protocol (Low Risk Profile)</h5>\
+            <p class="text-xs text-emerald-800 mb-2">Patient currently exhibits low probability of rapid axial elongation.</p>\
+            <ul class="list-disc ml-5 space-y-1 text-xs">\
+              <li><strong>Sunlight Exposure:</strong> Mandate minimum 90 to 120 minutes of daily natural outdoor activity.</li>\
+              <li><strong>Ergonomics:</strong> 20-20-20 rule during continuous near reading; maintain 33 cm reading distance.</li>\
+              <li><strong>Surveillance:</strong> Schedule 6-month cycloplegic refraction and optical biometry follow-up.</li>\
+            </ul>\
+          </div>\
+        `;\
+      \} else if (!isHighProg) \{\
+        html = `\
+          <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900">\
+            <h5 class="font-bold text-base flex items-center mb-1">Moderate Progression Protocol (Active Optical / Monotherapy)</h5>\
+            <p class="text-xs text-amber-800 mb-2">MPRAS scores classify patient as "At-Risk" for progression.</p>\
+            <ul class="list-disc ml-5 space-y-1 text-xs">\
+              <li><strong>First-Line Optical Defocus:</strong> Prescribe peripheral defocus spectacle lenses (DIMS or HALT technology) or Orthokeratology.</li>\
+              <li><strong>Pharmacological Support:</strong> Consider bedtime low-dose atropine (0.01%) eye drops if accommodative lag or binocular signs are within tolerance.</li>\
+              <li><strong>Follow-up Interval:</strong> 6-month cycloplegic refraction and repeat non-contact biometry.</li>\
+            </ul>\
+          </div>\
+        `;\
+      \} else \{\
+        html = `\
+          <div class="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-900">\
+            <h5 class="font-bold text-base flex items-center mb-1">Intensive Combination Protocol (Rapid Progressor: \uc0\u8805  0.75 D/Year)</h5>\
+            <p class="text-xs text-rose-800 mb-2">High risk of progressive high myopia and excessive axial elongation.</p>\
+            <ul class="list-disc ml-5 space-y-1 text-xs">\
+              <li><strong>Combination Intervention:</strong> Peripheral defocus lenses (DIMS / HALT) combined with low-dose atropine 0.025% to 0.05% nightly.</li>\
+              <li><strong>Lifestyle Prescription:</strong> Enforce strict ceiling on recreational device screen time (< 1 hr/day) and maximize morning outdoor illumination.</li>\
+              <li><strong>Strict Monitoring:</strong> 3-month interim visual acuity review; 6-month optical biometry (axial length elongation target: < 0.10 mm/year).</li>\
+            </ul>\
+          </div>\
+        `;\
+      \}\
+\
+      roadmapBox.innerHTML = html;\
+    \}\
+\
+    // 5. MASTER CONTROLLER\
+    function calculateAll() \{\
+      const od = evaluateEye('od');\
+      const os = evaluateEye('os');\
+\
+      // Update OD UI\
+      document.getElementById('odScoreVal').textContent = od.score;\
+      document.getElementById('odCutoffVal').textContent = 'Cut-off: ' + od.cutOff;\
+      document.getElementById('odDetail').textContent = 'Evaluated on ' + od.modelBadge;\
+      const odVerdict = document.getElementById('odVerdict');\
+      const odBadge = document.getElementById('odBadge');\
+      if (od.isAtRisk) \{\
+        odVerdict.textContent = 'At-Risk for High Progression';\
+        odVerdict.className = 'text-sm font-bold text-rose-600';\
+        odBadge.textContent = 'AT-RISK';\
+        odBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800';\
+      \} else \{\
+        odVerdict.textContent = 'Low-Risk Profile';\
+        odVerdict.className = 'text-sm font-bold text-emerald-600';\
+        odBadge.textContent = 'LOW RISK';\
+        odBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';\
+      \}\
+\
+      // Update OS UI\
+      document.getElementById('osScoreVal').textContent = os.score;\
+      document.getElementById('osCutoffVal').textContent = 'Cut-off: ' + os.cutOff;\
+      document.getElementById('osDetail').textContent = 'Evaluated on ' + os.modelBadge;\
+      const osVerdict = document.getElementById('osVerdict');\
+      const osBadge = document.getElementById('osBadge');\
+      if (os.isAtRisk) \{\
+        osVerdict.textContent = 'At-Risk for High Progression';\
+        osVerdict.className = 'text-sm font-bold text-rose-600';\
+        osBadge.textContent = 'AT-RISK';\
+        osBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800';\
+      \} else \{\
+        osVerdict.textContent = 'Low-Risk Profile';\
+        osVerdict.className = 'text-sm font-bold text-emerald-600';\
+        osBadge.textContent = 'LOW RISK';\
+        osBadge.className = 'text-xs px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';\
+      \}\
+\
+      renderCharts(od);\
+      updateRoadmap(od, os);\
+    \}\
+\
+    window.onload = () => \{\
+      if (sessionStorage.getItem('keh_logged_in') === 'true') \{\
+        calculateAll();\
+      \}\
+    \};\
+  </script>\
+</body>\
+</html>}
